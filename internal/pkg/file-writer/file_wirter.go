@@ -1,4 +1,4 @@
-package file_writer
+package filewriter
 
 import (
 	"io"

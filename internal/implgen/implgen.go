@@ -98,7 +98,7 @@ func (gen *Generator) getArgNames(m *model.Method) []string {
 		if name == "" {
 			name = fmt.Sprintf("arg%d", len(m.In))
 		}
-		argNames = append(argNames, name)
+		argNames = append(argNames, name) //nolint:makezero // mockgen authors
 	}
 	return argNames
 }
@@ -109,7 +109,11 @@ func (gen *Generator) getArgTypes(m *model.Method, pkgOverride string) []string 
 		argTypes[i] = p.Type.String(gen.packageMap, pkgOverride)
 	}
 	if m.Variadic != nil {
-		argTypes = append(argTypes, "..."+m.Variadic.Type.String(gen.packageMap, pkgOverride))
+		//nolint:makezero // mockgen authors
+		argTypes = append(
+			argTypes,
+			"..."+m.Variadic.Type.String(gen.packageMap, pkgOverride),
+		)
 	}
 	return argTypes
 }
@@ -169,8 +173,8 @@ func (gen *Generator) generateMethod(ifce *model.Interface, m *model.Method) {
 	g.P(fmt.Sprintf("func (%v *%v%v) %v(%v)%v {", "i", ifce.Name, "Implementation", m.Name, argString,
 		retString))
 
-	if m.In[0].Name == "ctx" && gen.withOtel { // TODO: AHAHAHA kill me
-		g.P("ctx, span := otel.Tracer(\"\").Start(ctx, \"", ifce.Name, "Implementation.", m.Name, "\")")
+	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") && gen.withOtel {
+		g.P("ctx, span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.", m.Name, "\")")
 		g.P("defer span.End()")
 		g.P()
 	}

@@ -1,4 +1,4 @@
-package implgen
+package mockgen
 
 // This file contains the model construction by parsing source files.
 

@@ -1,3 +1,4 @@
+//nolint:forbidigo // it's a cli util
 package logger
 
 import (

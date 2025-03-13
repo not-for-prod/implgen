@@ -1,8 +1,7 @@
-package implgen
+package mockgen
 
 import (
 	"go/ast"
-	"strings"
 
 	"github.com/golang/mock/mockgen/model"
 )
@@ -52,27 +51,4 @@ func (p *fileParser) parseGenericType(pkg string, typ ast.Expr, tps map[string]b
 		return m, nil
 	}
 	return nil, nil
-}
-
-func getIdentTypeParams(decl interface{}) string {
-	if decl == nil {
-		return ""
-	}
-	ts, ok := decl.(*ast.TypeSpec)
-	if !ok {
-		return ""
-	}
-	if ts.TypeParams == nil || len(ts.TypeParams.List) == 0 {
-		return ""
-	}
-	var sb strings.Builder
-	sb.WriteString("[")
-	for i, v := range ts.TypeParams.List {
-		if i != 0 {
-			sb.WriteString(", ")
-		}
-		sb.WriteString(v.Names[0].Name)
-	}
-	sb.WriteString("]")
-	return sb.String()
 }
