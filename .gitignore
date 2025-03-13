@@ -23,3 +23,6 @@ go.work.sum
 
 # env file
 .env
+proto/plugin/protoc-gen-burito/out/
+proto/plugin/protoc-gen-burito/bin/
+.idea
