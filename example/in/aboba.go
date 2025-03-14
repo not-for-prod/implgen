@@ -13,3 +13,8 @@ type Aboba interface {
 	Create(ctx context.Context, req CreateRequest) (model.OrderID, error)
 	Get(ctx context.Context, id model.OrderID) (model.Order, error)
 }
+
+type Boba interface {
+	Create(ctx context.Context, req CreateRequest) (model.OrderID, error)
+	Get(ctx context.Context, id model.OrderID) (model.Order, error)
+}

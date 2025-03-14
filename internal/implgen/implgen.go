@@ -131,7 +131,7 @@ func (gen *Generator) generateInterface(ifce *model.Interface) {
 	g.P("\treturn &", ifce.Name, "Implementation{}")
 	g.P("}")
 
-	writeGeneratedFile(g, gen.dst+"/implementation.go")
+	writeGeneratedFile(g, gen.dst+"/"+strtools.KebabCase(ifce.Name)+"/implementation.go")
 
 	for _, method := range ifce.Methods {
 		gen.generateMethod(ifce, method)
@@ -182,5 +182,5 @@ func (gen *Generator) generateMethod(ifce *model.Interface, m *model.Method) {
 	g.P("\tpanic(\"implement me\")")
 	g.P("}")
 
-	writeGeneratedFile(g, gen.dst+"/"+strtools.SnakeCase(m.Name)+".go")
+	writeGeneratedFile(g, gen.dst+"/"+strtools.KebabCase(ifce.Name)+"/"+strtools.SnakeCase(m.Name)+".go")
 }
