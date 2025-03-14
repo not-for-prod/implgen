@@ -16,10 +16,11 @@ import (
 const otelPackage = "go.opentelemetry.io/otel"
 
 type Generator struct {
-	pkg      *model.Package
-	src, dst string
-	filename string
-	withOtel bool
+	pkg           *model.Package
+	src, dst      string
+	filename      string
+	withOtel      bool
+	interfaceName string
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -28,13 +29,15 @@ func NewGenerator(
 	pkg *model.Package,
 	src, dst string,
 	withOtel bool,
+	interfaceName string,
 ) *Generator {
 	g := &Generator{
-		pkg:      pkg,
-		src:      src,
-		dst:      dst,
-		filename: "",
-		withOtel: withOtel,
+		pkg:           pkg,
+		src:           src,
+		dst:           dst,
+		filename:      "",
+		withOtel:      withOtel,
+		interfaceName: interfaceName,
 	}
 
 	// Get all required imports, and generate unique names for them all.
@@ -80,7 +83,9 @@ func NewGenerator(
 
 func (gen *Generator) Generate() {
 	for _, ifce := range gen.pkg.Interfaces {
-		gen.generateInterface(ifce)
+		if gen.interfaceName == "" || gen.interfaceName == ifce.Name {
+			gen.generateInterface(ifce)
+		}
 	}
 }
 
