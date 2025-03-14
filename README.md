@@ -1,5 +1,11 @@
 # Implgen
 
+Install:
+
+```bash
+go install github.com/not-for-prod/implgen@latest
+```
+
 > i wanted impementation generator that is working like generator inside IDE but cli
 
 As base i used [github.com/golang/mock/blob/main/mockgen](https://github.com/golang/mock/blob/main/mockgen) but as it was private i copied it and got it's guts out. 
