@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/not-for-prod/implgen/internal/implgen"
-	"github.com/not-for-prod/implgen/internal/mockgen"
 	"github.com/not-for-prod/implgen/internal/pkg/logger"
+	"github.com/not-for-prod/implgen/pkg/mockgen"
 	"github.com/spf13/cobra"
 )
 

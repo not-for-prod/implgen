@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
 	strtools "github.com/not-for-prod/implgen/internal/pkg/string-tools"
+	"github.com/not-for-prod/implgen/pkg/mockgen/model"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 

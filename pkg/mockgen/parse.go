@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/not-for-prod/implgen/pkg/mockgen/model"
 )
 
 var (

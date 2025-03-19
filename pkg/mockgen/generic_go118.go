@@ -3,7 +3,7 @@ package mockgen
 import (
 	"go/ast"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/not-for-prod/implgen/pkg/mockgen/model"
 )
 
 func getTypeSpecTypeParams(ts *ast.TypeSpec) []*ast.Field {
