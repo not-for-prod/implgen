@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/manifoldco/promptui"
-	file_writer "github.com/not-for-prod/implgen/internal/pkg/file-writer"
-	"github.com/not-for-prod/implgen/internal/pkg/logger"
+	file_writer "github.com/not-for-prod/implgen/pkg/file-writer"
+	"github.com/not-for-prod/implgen/pkg/logger"
 	importsTool "golang.org/x/tools/imports"
 	"google.golang.org/protobuf/compiler/protogen"
 )
