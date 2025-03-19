@@ -4,7 +4,6 @@ go 1.23.1
 
 require (
 	github.com/fatih/color v1.18.0
-	github.com/golang/mock v1.7.0-rc.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/mod v0.5.1
