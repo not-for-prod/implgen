@@ -390,7 +390,7 @@ issues:
   max-same-issues: 50
 
   exclude-files:
-    - internal/mockgen/
+    - pkg/mockgen
     - internal/implgen/mockgen.go
 
   exclude-rules:
