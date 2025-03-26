@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/not-for-prod/gen-tools/clog"
+	"github.com/not-for-prod/gen-tools/mockgen"
 	"github.com/not-for-prod/implgen/internal/implgen"
-	"github.com/not-for-prod/implgen/pkg/logger"
-	"github.com/not-for-prod/implgen/pkg/mockgen"
 	"github.com/spf13/cobra"
 )
 
@@ -26,12 +26,12 @@ func main() {
 
 			withOtel, err := cmd.Flags().GetBool(withOtelFlag)
 			if err != nil {
-				logger.Fatal(err.Error())
+				clog.Fatal(err.Error())
 			}
 
 			pkg, err := mockgen.SourceMode(src)
 			if err != nil {
-				logger.Fatalf(err.Error())
+				clog.Fatal(err.Error())
 			}
 
 			g := implgen.NewGenerator(pkg, src, dst, withOtel, ifceName)
