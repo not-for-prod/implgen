@@ -3,6 +3,6 @@ package in
 type AbobaImplementation struct {
 }
 
-func NewGeneratorAbobaImplementation() *AbobaImplementation {
+func newGeneratorAbobaImplementation() *AbobaImplementation {
 	return &AbobaImplementation{}
 }
