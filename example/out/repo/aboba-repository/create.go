@@ -1,4 +1,4 @@
-package aboba_repositoryrepo
+package abobarepositoryrepo
 
 import (
 	context "context"

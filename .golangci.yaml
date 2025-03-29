@@ -391,7 +391,9 @@ issues:
 
   exclude-files:
     - pkg/mockgen
-    - internal/implgen/mockgen.go
+    - internal/basic/mockgen.go
+    - pkg/clog
+    - example
 
   exclude-rules:
     - source: "(noinspection|TODO)"

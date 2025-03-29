@@ -214,6 +214,23 @@ func (r *repoGenerator) genReturnString(m *model.Method) string {
 		case "float32", "float64":
 			builder.WriteString("0.0")
 		default:
+			// here we need to add it in model
+			p := protogen.Plugin{}
+			g := p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
+			g.P("package model")
+			g.P()
+			tokens := strings.Split(returnType, ".")
+			modelName := tokens[len(tokens)-1]
+			g.P("type ", modelName, " struct {}")
+
+			path := r.dst + "/" + strtools.KebabCase(r.interfaceName) + "/model/" +
+				strtools.SnakeCase(modelName) + ".go"
+
+			err := fwriter.WriteGeneratedFile(path, g)
+			if err != nil {
+				clog.Fatal(err.Error())
+			}
+
 			if strings.HasPrefix(returnType, "*") || strings.HasPrefix(returnType, "[]") {
 				builder.WriteString("nil") // Pointers and slices should return nil
 			} else {

@@ -1,4 +1,4 @@
-package aboba_repositoryrepo
+package abobarepositoryrepo
 
 import (
 	trmsqlx "github.com/avito-tech/go-transaction-manager/sqlx"
