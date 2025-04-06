@@ -135,7 +135,7 @@ func (b *basicGenerator) generateInterface(ifce *model.Interface) {
 	g.P("type ", ifce.Name, "Implementation struct {")
 	g.P("}")
 	g.P()
-	g.P("func newGenerator", ifce.Name, "Implementation() *", ifce.Name, "Implementation {")
+	g.P("func New", ifce.Name, "Implementation() *", ifce.Name, "Implementation {")
 	g.P("\treturn &", ifce.Name, "Implementation{}")
 	g.P("}")
 
