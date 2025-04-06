@@ -130,7 +130,7 @@ func (b *basicGenerator) generateInterface(ifce *model.Interface) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
 
-	g.P("package ", strtools.SnakeCase(b.pkg.Name))
+	g.P("package ", strtools.SnakeCase(ifce.Name))
 	g.P()
 	g.P("type ", ifce.Name, "Implementation struct {")
 	g.P("}")
@@ -155,7 +155,7 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
 
-	g.P("package ", strtools.SnakeCase(b.pkg.Name))
+	g.P("package ", strtools.SnakeCase(ifce.Name))
 	g.P()
 
 	g.P("import (")
