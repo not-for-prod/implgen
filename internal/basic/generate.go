@@ -187,7 +187,8 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 		retString))
 
 	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") && b.withOtel {
-		g.P("ctx, span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.", m.Name, "\")")
+		g.P(argNames[0], ", span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.",
+			m.Name, "\")")
 		g.P("defer span.End()")
 		g.P()
 	}
