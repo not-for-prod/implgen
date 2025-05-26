@@ -11,7 +11,7 @@ It helps kick-start the development of service layers, adapters, and stubs while
 - 📂 Supports single-file or per-method file output
 - 📦 Customizable output package and struct name
 - 🎯 Target a specific interface or process all in the source file
-- 🧭 OpenTelemetry span instrumentation for methods with `context.Context`
+- 🧭 Supports OpenTelemetry span instrumentation for methods with `context.Context`
 - 🐫 Automatic file/folder naming via `kebab-case` and `snake_case` converters
 
 ---
@@ -43,6 +43,7 @@ implgen basic --src example/in/interface.go \
 		--interface-name TestInterface \
 		--impl-name Test \
 		--impl-package test \
+		--enable-trace \
 		--tracer-name my-brilliant-tracer
 ```
 

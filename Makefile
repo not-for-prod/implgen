@@ -5,4 +5,5 @@ test:
 		--interface-name TestInterface \
 		--impl-name Test \
 		--impl-package test \
+		--enable-trace \
 		--tracer-name my-brilliant-tracer

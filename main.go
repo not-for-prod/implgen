@@ -19,6 +19,7 @@ const (
 	implementationNameFlag        = "impl-name"
 	implementationPackageNameFlag = "impl-package"
 	singleFileFlag                = "single-file"
+	enableTraceFlag               = "enable-trace"
 	tracerNameFlag                = "tracer-name"
 )
 
@@ -87,6 +88,8 @@ func registerFlags(cmd *cobra.Command) {
 	cmd.Flags().String(interfaceNameFlag, "", "source interface name")
 	cmd.Flags().Bool(singleFileFlag, false, "generate interface methods into single file")
 	cmd.Flags().String(tracerNameFlag, defaultTracerName, "name used in otel.Tracer(<tracer-name>).Start(...)")
+	cmd.Flags().Bool(enableTraceFlag, false,
+		"whether you need to add otel.Tracer(<tracer-name>).Start(...) in your methods")
 	cmd.Flags().String(implementationNameFlag, defaultImplementationName, "generated implementation struct name")
 	cmd.Flags().String(implementationPackageNameFlag, "",
 		"generated implementation package name, can be used only when interface name is set")
@@ -123,6 +126,7 @@ func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.GenerateCommand {
 	singleFile, _ := flags.GetBool(singleFileFlag)
 	implementationName, _ := flags.GetString(implementationNameFlag)
 	implementationPackageName, _ := flags.GetString(implementationPackageNameFlag)
+	enableTrace, _ := flags.GetBool(enableTraceFlag)
 
 	// Validate: impl package name requires interface name
 	if implementationPackageName != "" && interfaceName == "" {
@@ -135,6 +139,7 @@ func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.GenerateCommand {
 		interfaceName,             // src interface name
 		implementationName,        // dst struct name
 		implementationPackageName, // dst package name
+		enableTrace,
 		tracerName,
 		singleFile,
 	)
