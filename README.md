@@ -24,6 +24,22 @@ go install github.com/not-for-prod/implgen@latest
 
 ## Usage example 
 
+Flags (required):
+
+- `src` - source file path
+- `dst` - destination dir path
+
+Flags (optional):
+
+- `interface-name` - source `interface` name
+- `impl-name` - generated implementation `struct` name
+- `impl-package` - generated implementation `package` name, can be used only if `interface-name` set
+- `enable-trace` - enables writing `otel.Traсer(...).Start(...)` in methods, 
+where first argument type is `context.Context` 
+- `tracer-name` - name used in `otel.Traсer(<tracer-name>)`
+- `single-file` - indicates whether methods will be generated into single file or
+file per method
+
 Assume you have an [interface](./example/in/interface.go):
 
 ```go
