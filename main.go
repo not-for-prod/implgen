@@ -38,7 +38,7 @@ func main() {
 		Short: "creates basic interface implementation",
 		Long: `This tool generates Go implementations for interfaces in the given source package.
 Example:
-  implgen basic --src=./service --dst=./serviceimpl --interface-name=Greeter`,
+  implgen --src=./service --dst=./serviceimpl --interface-name=Greeter`,
 		Run: func(cmd *cobra.Command, args []string) {
 			flags := cmd.Flags()
 			parseCommand := flagsToParseCommand(flags)
@@ -89,8 +89,6 @@ func registerFlags(cmd *cobra.Command) {
 	cmd.Flags().String(implementationNameFlag, defaultImplementationName, "generated implementation struct name")
 	cmd.Flags().String(implementationPackageNameFlag, "",
 		"generated implementation package name, can be used only when interface name is set")
-
-	cmd.MarkFlagsRequiredTogether(interfaceNameFlag, implementationPackageNameFlag)
 }
 
 // flagsToParseCommand - parse cobra.Command flags into parser.ParseCommand

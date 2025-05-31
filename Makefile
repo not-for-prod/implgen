@@ -6,4 +6,4 @@ test:
 		--impl-name Test \
 		--impl-package test \
 		--enable-trace \
-		--tracer-name my-brilliant-tracer
+		--tracer-name "my-brilliant-tracer"
