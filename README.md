@@ -28,7 +28,7 @@ go install github.com/not-for-prod/implgen@latest
 ## Usage example 
 
 ```shell
-implgen basic --src=./service --dst=./serviceimpl --interface-name=Greeter
+implgen --src=./service --dst=./serviceimpl --interface-name=Greeter
 ```
 
 Flags (required):
@@ -61,7 +61,7 @@ type TestInterface interface {
 Run:
 
 ```shell
-implgen basic --src example/in/interface.go \
+implgen --src example/in/interface.go \
 		--dst example/out/ \
 		--interface-name TestInterface \
 		--impl-name Test \

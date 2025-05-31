@@ -34,7 +34,7 @@ const (
 func main() {
 	// Define the root command
 	cmd := &cobra.Command{
-		Use:   "basic",
+		Use:   "implgen",
 		Short: "creates basic interface implementation",
 		Long: `This tool generates Go implementations for interfaces in the given source package.
 Example:
