@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/not-for-prod/implgen/internal/model"
+	"github.com/not-for-prod/implgen/model"
 )
 
 type ParseCommand struct {

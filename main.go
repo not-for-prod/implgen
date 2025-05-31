@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/not-for-prod/implgen/internal/generator"
-	"github.com/not-for-prod/implgen/internal/parser"
-	"github.com/not-for-prod/implgen/internal/writer"
+	"github.com/not-for-prod/implgen/generator"
+	"github.com/not-for-prod/implgen/parser"
 	"github.com/not-for-prod/implgen/pkg/clog"
+	"github.com/not-for-prod/implgen/writer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -45,24 +45,16 @@ Example:
 			generateCommand := flagsToGenerateCommand(flags)
 
 			_package, err := parseCommand.Execute()
-			if err != nil {
-				clog.Errorf("failed to parse source file: %v", err)
-				os.Exit(1)
-			}
+			exitOnErr("failed to parse source file", err)
 
 			// Run code generation using provided options
 			files, err := generateCommand.Execute(_package)
-			if err != nil {
-				clog.Errorf("failed to generate implementation: %v", err)
-			}
+			exitOnErr("failed to generate implementation", err)
 
 			// Write generated files to disk
 			for _, file := range files {
 				err := writer.WriteGoBytesToFile(file.Path, file.Data)
-				if err != nil {
-					clog.Errorf("failed to write basic interfaces implementation: %s", err)
-					os.Exit(1)
-				}
+				exitOnErr("failed to write basic interfaces implementation", err)
 			}
 		},
 	}
@@ -72,8 +64,12 @@ Example:
 
 	// Execute the root command
 	err := cmd.Execute()
+	exitOnErr("failed to execute command", err)
+}
+
+func exitOnErr(msg string, err error) {
 	if err != nil {
-		clog.Errorf("failed to execute command: %s", err)
+		clog.Errorf("%s: %v", msg, err)
 		os.Exit(1)
 	}
 }
@@ -93,6 +89,8 @@ func registerFlags(cmd *cobra.Command) {
 	cmd.Flags().String(implementationNameFlag, defaultImplementationName, "generated implementation struct name")
 	cmd.Flags().String(implementationPackageNameFlag, "",
 		"generated implementation package name, can be used only when interface name is set")
+
+	cmd.MarkFlagsRequiredTogether(interfaceNameFlag, implementationPackageNameFlag)
 }
 
 // flagsToParseCommand - parse cobra.Command flags into parser.ParseCommand

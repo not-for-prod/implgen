@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/not-for-prod/implgen/internal/model"
+	"github.com/not-for-prod/implgen/model"
 	stringCase "github.com/not-for-prod/implgen/pkg/string-case"
 	"google.golang.org/protobuf/compiler/protogen"
 )
