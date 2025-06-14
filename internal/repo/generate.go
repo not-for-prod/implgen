@@ -17,14 +17,17 @@ type repoGenerator struct {
 	pkg                     *model.Package
 	imports                 map[string]string // key: path, value: alias
 	goPackage               string
+	withTests               bool
 }
 
-func newRepoGenerator(src, dst, interfaceName string, pkg *model.Package) *repoGenerator {
+func newRepoGenerator(src, dst, interfaceName string, pkg *model.Package, withTests bool) *repoGenerator {
 	// modify imports with sql, otel && avito tx manager
 	imports := map[string]string{
 		"go.opentelemetry.io/otel":                          "otel",
 		"github.com/jmoiron/sqlx":                           "sqlx",
 		"github.com/avito-tech/go-transaction-manager/sqlx": "trmsqlx",
+		"testing":                           "testing",
+		"github.com/stretchr/testify/suite": "suite",
 	}
 
 	for imp := range pkg.Imports() {
@@ -38,26 +41,32 @@ func newRepoGenerator(src, dst, interfaceName string, pkg *model.Package) *repoG
 		pkg:           pkg,
 		imports:       imports,
 		goPackage:     getModuleName(),
+		withTests:     withTests,
 	}
 }
 
-func (r *repoGenerator) packageName() string {
-	return strings.ToLower(r.interfaceName) + "repo"
+func (r *repoGenerator) packageName(ifce *model.Interface) string {
+	return strings.ToLower(ifce.Name) + "repo"
 }
 
 func (r *repoGenerator) generate() {
 	for _, ifce := range r.pkg.Interfaces {
 		if r.interfaceName == "" || r.interfaceName == ifce.Name {
-			r.genInterface(ifce)
+			if r.withTests {
+				r.genImplementationTests(ifce)
+			}
+
+			r.genImplementation(ifce)
 		}
 	}
 }
 
-func (r *repoGenerator) genInterface(i *model.Interface) {
+func (r *repoGenerator) genImplementation(ifce *model.Interface) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
+	path := r.dst + "/" + strtools.KebabCase(ifce.Name) + "/implementation.go"
 
-	g.P("package ", r.packageName())
+	g.P("package ", r.packageName(ifce))
 	g.P()
 	g.P("import (")
 	for path, alias := range r.imports {
@@ -77,8 +86,6 @@ func (r *repoGenerator) genInterface(i *model.Interface) {
 	g.P("}")
 	g.P("}")
 
-	path := r.dst + "/" + strtools.KebabCase(i.Name) + "/implementation.go"
-
 	err := fwriter.WriteGeneratedFile(path, g)
 	if err != nil {
 		clog.Fatal(err.Error())
@@ -86,6 +93,7 @@ func (r *repoGenerator) genInterface(i *model.Interface) {
 
 	// generate sql embed file
 	g = p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
+
 	g.P("package sql")
 	g.P()
 	g.P("import (")
@@ -93,12 +101,12 @@ func (r *repoGenerator) genInterface(i *model.Interface) {
 	g.P(")")
 	g.P()
 
-	for _, m := range i.Methods {
+	for _, m := range ifce.Methods {
 		g.P("//go:embed ", strtools.SnakeCase(m.Name), ".sql")
 		g.P("var ", m.Name, " string")
 		g.P()
 
-		path = r.dst + "/" + strtools.KebabCase(i.Name) + "/sql/" + strtools.SnakeCase(m.Name) + ".sql"
+		path = r.dst + "/" + strtools.KebabCase(ifce.Name) + "/sql/" + strtools.SnakeCase(m.Name) + ".sql"
 
 		// create `.sql` file
 		err = fwriter.WriteBytesToFile(path, []byte(``))
@@ -106,10 +114,10 @@ func (r *repoGenerator) genInterface(i *model.Interface) {
 			clog.Fatal(err.Error())
 		}
 
-		r.genMethod(i, m)
+		r.genMethod(ifce, m)
 	}
 
-	path = r.dst + "/" + strtools.KebabCase(i.Name) + "/sql/sql.go"
+	path = r.dst + "/" + strtools.KebabCase(ifce.Name) + "/sql/sql.go"
 
 	err = fwriter.WriteGeneratedFile(path, g)
 	if err != nil {
@@ -117,18 +125,58 @@ func (r *repoGenerator) genInterface(i *model.Interface) {
 	}
 }
 
-func (r *repoGenerator) genMethod(i *model.Interface, m *model.Method) {
+func (r *repoGenerator) genImplementationTests(ifce *model.Interface) {
+	p := protogen.Plugin{}
+	g := p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
+	path := r.dst + "/" + strtools.KebabCase(ifce.Name) + "/implementation_test.go"
+
+	g.P("package ", r.packageName(ifce))
+	g.P()
+	g.P("import (")
+	for pkg, alias := range r.imports {
+		g.P("\t", alias, "\"", pkg, "\"") // cannot use g.Import here
+	}
+	g.P(")")
+	g.P()
+	g.P("type TestSuite struct{")
+	g.P("suite.Suite")
+	g.P("db *sqlx.DB")
+	g.P("impl *Implementation")
+	g.P("}")
+	g.P()
+	g.P("func (suite *TestSuite) SetupSuite() {")
+	g.P("}")
+	g.P()
+	g.P("func (suite *TestSuite) TearDownSuite() {")
+	g.P("suite.db.Close()")
+	g.P("}")
+	g.P()
+	g.P("func TestTestSuite(t *testing.T) {")
+	g.P("suite.Run(t, new(TestSuite))")
+	g.P("}")
+
+	err := fwriter.WriteGeneratedFile(path, g)
+	if err != nil {
+		clog.Fatal(err.Error())
+	}
+
+	for _, m := range ifce.Methods {
+		r.genMethodTest(ifce, m)
+	}
+}
+
+func (r *repoGenerator) genMethod(ifce *model.Interface, m *model.Method) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
 
-	g.P("package ", r.packageName())
+	g.P("package ", r.packageName(ifce))
 	g.P()
 	g.P("import (")
 	for path, alias := range r.imports {
 		g.P("\t", alias, "\"", path, "\"") // cannot use g.Import here
 	}
 
-	sqlPath := strings.ReplaceAll(r.dst, "./", "") + "/" + strtools.KebabCase(i.Name) + "/sql"
+	sqlPath := strings.ReplaceAll(r.dst, "./", "") + "/" + strtools.KebabCase(ifce.Name) + "/sql"
 
 	g.P("sql \"", r.goPackage, "/", sqlPath, "\"")
 	g.P(")")
@@ -137,10 +185,10 @@ func (r *repoGenerator) genMethod(i *model.Interface, m *model.Method) {
 	// get args and returns
 	args := r.genArgs(m)
 	returns := r.genReturns(m)
-	returnString := r.genReturnString(m)
+	returnString := r.genReturnString(ifce, m)
 
 	g.P("func (i Implementation) ", m.Name, "(", args, ") (", returns, ") {")
-	g.P("ctx, span := otel.Tracer(\"\").Start(ctx, \"", i.Name, "Implementation.", m.Name, "\")")
+	g.P("ctx, span := otel.Tracer(\"\").Start(ctx, \"", ifce.Name, "Implementation.", m.Name, "\")")
 	g.P("defer span.End()")
 	g.P()
 	g.P("var err error")
@@ -160,7 +208,7 @@ func (r *repoGenerator) genMethod(i *model.Interface, m *model.Method) {
 		g.P()
 		g.P("err = i.ctxGetter.DefaultTrOrDB(ctx, i.db).GetContext(ctx, &item, sql.", m.Name, ")")
 	default:
-		g.P("err = i.ctxGetter.DefaultTrOrDB(ctx, i.db).ExecContext(ctx, )")
+		g.P("_, err = i.ctxGetter.DefaultTrOrDB(ctx, i.db).ExecContext(ctx, )")
 	}
 
 	g.P("if err != nil {")
@@ -172,7 +220,29 @@ func (r *repoGenerator) genMethod(i *model.Interface, m *model.Method) {
 	g.P("}")
 	g.P()
 
-	path := r.dst + "/" + strtools.KebabCase(i.Name) + "/" + strtools.SnakeCase(m.Name) + ".go"
+	path := r.dst + "/" + strtools.KebabCase(ifce.Name) + "/" + strtools.SnakeCase(m.Name) + ".go"
+
+	err := fwriter.WriteGeneratedFile(path, g)
+	if err != nil {
+		clog.Fatal(err.Error())
+	}
+}
+
+func (r *repoGenerator) genMethodTest(ifce *model.Interface, m *model.Method) {
+	p := protogen.Plugin{}
+	g := p.NewGeneratedFile(r.dst, protogen.GoImportPath(r.dst))
+	path := r.dst + "/" + strtools.KebabCase(ifce.Name) + "/" + strtools.SnakeCase(m.Name) + "_test.go"
+
+	g.P("package ", strtools.SnakeCase(ifce.Name))
+	g.P()
+	g.P("import (")
+	for pkg, alias := range r.imports {
+		g.P("\t", alias, "\"", pkg, "\"") // cannot use g.Import here
+	}
+	g.P(")")
+	g.P()
+	g.P("func (suite *TestSuite) Test", m.Name, "() {")
+	g.P("}")
 
 	err := fwriter.WriteGeneratedFile(path, g)
 	if err != nil {
@@ -191,7 +261,7 @@ func (r *repoGenerator) genReturns(m *model.Method) string {
 }
 
 // genReturnString is vibecoded)))
-func (r *repoGenerator) genReturnString(m *model.Method) string {
+func (r *repoGenerator) genReturnString(ifce *model.Interface, m *model.Method) string {
 	builder := strings.Builder{}
 
 	for i, p := range m.Out {
@@ -223,7 +293,7 @@ func (r *repoGenerator) genReturnString(m *model.Method) string {
 			modelName := tokens[len(tokens)-1]
 			g.P("type ", modelName, " struct {}")
 
-			path := r.dst + "/" + strtools.KebabCase(r.interfaceName) + "/model/" +
+			path := r.dst + "/" + strtools.KebabCase(ifce.Name) + "/model/" +
 				strtools.SnakeCase(modelName) + ".go"
 
 			err := fwriter.WriteGeneratedFile(path, g)

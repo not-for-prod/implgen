@@ -9,8 +9,8 @@ import (
 const (
 	srcFlag       = "src"
 	dstFlag       = "dst"
-	withOtelFlag  = "with-otel"
 	interfaceName = "interface-name"
+	withTestsFlag = "tests"
 )
 
 func NewCMD() *cobra.Command {
@@ -23,7 +23,7 @@ func NewCMD() *cobra.Command {
 			dst := cmd.Flag(dstFlag).Value.String()
 			ifceName := cmd.Flag(interfaceName).Value.String()
 
-			withOtel, err := cmd.Flags().GetBool(withOtelFlag)
+			withTests, err := cmd.Flags().GetBool(withTestsFlag)
 			if err != nil {
 				clog.Fatal(err.Error())
 			}
@@ -33,15 +33,15 @@ func NewCMD() *cobra.Command {
 				clog.Fatal(err.Error())
 			}
 
-			g := newGenerator(pkg, src, dst, withOtel, ifceName)
+			g := newGenerator(pkg, src, dst, ifceName, withTests)
 			g.generate()
 		},
 	}
 
 	c.Flags().String(srcFlag, "", "path to interface")
 	c.Flags().String(dstFlag, "", "path to generated files")
-	c.Flags().Bool(withOtelFlag, false, "use otel tracer")
 	c.Flags().String(interfaceName, "", "interface name")
+	c.Flags().Bool(withTestsFlag, false, "generate test files")
 
 	return c
 }

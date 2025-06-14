@@ -10,6 +10,7 @@ const (
 	srcFlag           = "src"
 	dstFlag           = "dst"
 	interfaceNameFlag = "interface-name"
+	withTestsFlag     = "tests"
 )
 
 func NewCMD() *cobra.Command {
@@ -38,13 +39,19 @@ func NewCMD() *cobra.Command {
 				clog.Fatal(err.Error())
 			}
 
-			newRepoGenerator(src, dst, ifceName, pkg).generate()
+			withTests, err := cmd.Flags().GetBool(withTestsFlag)
+			if err != nil {
+				clog.Fatal(err.Error())
+			}
+
+			newRepoGenerator(src, dst, ifceName, pkg, withTests).generate()
 		},
 	}
 
 	c.Flags().String(srcFlag, "", "path to interface")
 	c.Flags().String(dstFlag, "", "path to generated files")
 	c.Flags().String(interfaceNameFlag, "", "interface name")
+	c.Flags().Bool(withTestsFlag, false, "generate test files")
 
 	return c
 }

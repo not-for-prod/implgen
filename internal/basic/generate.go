@@ -16,14 +16,18 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
-const otelPackage = "go.opentelemetry.io/otel"
+const (
+	otelPackage    = "go.opentelemetry.io/otel"
+	testingPackage = "testing"
+	testifyPackage = "github.com/stretchr/testify/suite"
+)
 
 type basicGenerator struct {
 	pkg           *model.Package
 	src, dst      string
 	filename      string
-	withOtel      bool
 	interfaceName string
+	withTests     bool
 
 	packageMap map[string]string // map from import path to package name
 }
@@ -31,16 +35,16 @@ type basicGenerator struct {
 func newGenerator(
 	pkg *model.Package,
 	src, dst string,
-	withOtel bool,
 	interfaceName string,
+	withTests bool,
 ) *basicGenerator {
 	g := &basicGenerator{
 		pkg:           pkg,
 		src:           src,
 		dst:           dst,
 		filename:      "",
-		withOtel:      withOtel,
 		interfaceName: interfaceName,
+		withTests:     withTests,
 	}
 
 	// Get all required imports, and generate unique names for them all.
@@ -87,7 +91,10 @@ func newGenerator(
 func (b *basicGenerator) generate() {
 	for _, ifce := range b.pkg.Interfaces {
 		if b.interfaceName == "" || b.interfaceName == ifce.Name {
-			b.generateInterface(ifce)
+			if b.withTests {
+				b.generateImplementationTest(ifce)
+			}
+			b.generateImplementation(ifce)
 		}
 	}
 }
@@ -126,20 +133,19 @@ func (b *basicGenerator) getArgTypes(m *model.Method, pkgOverride string) []stri
 	return argTypes
 }
 
-func (b *basicGenerator) generateInterface(ifce *model.Interface) {
+func (b *basicGenerator) generateImplementation(ifce *model.Interface) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
+	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/implementation.go"
 
 	g.P("package ", strtools.SnakeCase(ifce.Name))
 	g.P()
-	g.P("type ", ifce.Name, "Implementation struct {")
+	g.P("type Implementation struct {")
 	g.P("}")
 	g.P()
-	g.P("func New", ifce.Name, "Implementation() *", ifce.Name, "Implementation {")
+	g.P("func NewImplementation() *", ifce.Name, "Implementation {")
 	g.P("\treturn &", ifce.Name, "Implementation{}")
 	g.P("}")
-
-	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/implementation.go"
 
 	err := fwriter.WriteGeneratedFile(path, g)
 	if err != nil {
@@ -151,9 +157,50 @@ func (b *basicGenerator) generateInterface(ifce *model.Interface) {
 	}
 }
 
+func (b *basicGenerator) generateImplementationTest(ifce *model.Interface) {
+	p := protogen.Plugin{}
+	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
+	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/implementation_test.go"
+
+	g.P("package ", strtools.SnakeCase(ifce.Name))
+	g.P()
+	g.P("import (")
+	for imp := range b.packageMap {
+		g.P("\t\"", imp, "\"") // cannot use g.Import here
+	}
+	g.P("\t\"", testingPackage, "\"")
+	g.P("\t\"", testifyPackage, "\"")
+	g.P(")")
+	g.P()
+	g.P("type TestSuite struct{")
+	g.P("suite.Suite")
+	g.P("impl *Implementation")
+	g.P("}")
+	g.P()
+	g.P("func (suite *TestSuite) SetupSuite() {")
+	g.P("}")
+	g.P()
+	g.P("func (suite *TestSuite) TearDownSuite() {")
+	g.P("}")
+	g.P()
+	g.P("func TestTestSuite(t *testing.T) {")
+	g.P("suite.Run(t, new(TestSuite))")
+	g.P("}")
+
+	err := fwriter.WriteGeneratedFile(path, g)
+	if err != nil {
+		clog.Fatal(err.Error())
+	}
+
+	for _, method := range ifce.Methods {
+		b.generateMethodTest(ifce, method)
+	}
+}
+
 func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
+	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/" + strtools.SnakeCase(m.Name) + ".go"
 
 	g.P("package ", strtools.SnakeCase(ifce.Name))
 	g.P()
@@ -162,9 +209,7 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 	for imp := range b.packageMap {
 		g.P("\t\"", imp, "\"") // cannot use g.Import here
 	}
-	if b.withOtel {
-		g.P("\t\"", otelPackage, "\"")
-	}
+	g.P("\t\"", otelPackage, "\"")
 	g.P(")")
 
 	argNames := b.getArgNames(m)
@@ -186,7 +231,7 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 	g.P(fmt.Sprintf("func (%v *%v%v) %v(%v)%v {", "i", ifce.Name, "Implementation", m.Name, argString,
 		retString))
 
-	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") && b.withOtel {
+	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") {
 		g.P(argNames[0], ", span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.",
 			m.Name, "\")")
 		g.P("defer span.End()")
@@ -196,7 +241,29 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 	g.P("\tpanic(\"implement me\")")
 	g.P("}")
 
-	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/" + strtools.SnakeCase(m.Name) + ".go"
+	err := fwriter.WriteGeneratedFile(path, g)
+	if err != nil {
+		clog.Fatal(err.Error())
+	}
+}
+
+func (b *basicGenerator) generateMethodTest(ifce *model.Interface, m *model.Method) {
+	p := protogen.Plugin{}
+	g := p.NewGeneratedFile(b.filename, protogen.GoImportPath(b.dst))
+	path := b.dst + "/" + strtools.KebabCase(ifce.Name) + "/" + strtools.SnakeCase(m.Name) + "_test.go"
+
+	g.P("package ", strtools.SnakeCase(ifce.Name))
+	g.P()
+
+	g.P("import (")
+	for imp := range b.packageMap {
+		g.P("\t\"", imp, "\"") // cannot use g.Import here
+	}
+	g.P("\t\"", otelPackage, "\"")
+	g.P(")")
+
+	g.P("func (suite *TestSuite) Test", m.Name, "() {")
+	g.P("}")
 
 	err := fwriter.WriteGeneratedFile(path, g)
 	if err != nil {
