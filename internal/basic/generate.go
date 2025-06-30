@@ -143,8 +143,8 @@ func (b *basicGenerator) generateImplementation(ifce *model.Interface) {
 	g.P("type Implementation struct {")
 	g.P("}")
 	g.P()
-	g.P("func NewImplementation() *", ifce.Name, "Implementation {")
-	g.P("\treturn &", ifce.Name, "Implementation{}")
+	g.P("func NewImplementation() *Implementation {")
+	g.P("\treturn &Implementation{}")
 	g.P("}")
 
 	err := fwriter.WriteGeneratedFile(path, g)
@@ -228,12 +228,18 @@ func (b *basicGenerator) generateMethod(ifce *model.Interface, m *model.Method) 
 		retString = " " + retString
 	}
 
-	g.P(fmt.Sprintf("func (%v *%v%v) %v(%v)%v {", "i", ifce.Name, "Implementation", m.Name, argString,
-		retString))
+	g.P(
+		fmt.Sprintf(
+			"func (i *Implementation) %v(%v)%v {", m.Name, argString,
+			retString,
+		),
+	)
 
 	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") {
-		g.P(argNames[0], ", span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.",
-			m.Name, "\")")
+		g.P(
+			argNames[0], ", span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.",
+			m.Name, "\")",
+		)
 		g.P("defer span.End()")
 		g.P()
 	}

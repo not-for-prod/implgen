@@ -78,9 +78,11 @@ func WriteGoBytesToFile(path string, data []byte) error {
 	var err error
 
 	// goimports -w ...
-	data, err = importsTool.Process(path, data, &importsTool.Options{
-		Comments: true,
-	})
+	data, err = importsTool.Process(
+		path, data, &importsTool.Options{
+			Comments: true,
+		},
+	)
 	if err != nil {
 		clog.Fatalf(err.Error())
 	}
@@ -104,7 +106,7 @@ func WriteGeneratedFile(path string, g *protogen.GeneratedFile) error {
 	if err != nil {
 		return err
 	}
-
+	
 	err = WriteGoBytesToFile(path, data)
 	if err != nil {
 		return err

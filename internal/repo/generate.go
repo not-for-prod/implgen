@@ -70,7 +70,7 @@ func (r *repoGenerator) genImplementation(ifce *model.Interface) {
 	g.P()
 	g.P("import (")
 	for path, alias := range r.imports {
-		g.P("\t", alias, "\"", path, "\"") // cannot use g.Import here
+		g.P("\t", strings.Replace(alias, "-", "", -1), " \"", path, "\"") // cannot use g.Import here
 	}
 	g.P(")")
 	g.P()
@@ -134,7 +134,7 @@ func (r *repoGenerator) genImplementationTests(ifce *model.Interface) {
 	g.P()
 	g.P("import (")
 	for pkg, alias := range r.imports {
-		g.P("\t", alias, "\"", pkg, "\"") // cannot use g.Import here
+		g.P("\t", strings.Replace(alias, "-", "", -1), " \"", pkg, "\"") // cannot use g.Import here
 	}
 	g.P(")")
 	g.P()
@@ -173,7 +173,7 @@ func (r *repoGenerator) genMethod(ifce *model.Interface, m *model.Method) {
 	g.P()
 	g.P("import (")
 	for path, alias := range r.imports {
-		g.P("\t", alias, "\"", path, "\"") // cannot use g.Import here
+		g.P("\t", strings.Replace(alias, "-", "", -1), " \"", path, "\"") // cannot use g.Import here
 	}
 
 	sqlPath := strings.ReplaceAll(r.dst, "./", "") + "/" + strtools.KebabCase(ifce.Name) + "/sql"
@@ -187,11 +187,12 @@ func (r *repoGenerator) genMethod(ifce *model.Interface, m *model.Method) {
 	returns := r.genReturns(m)
 	returnString := r.genReturnString(ifce, m)
 
-	g.P("func (i Implementation) ", m.Name, "(", args, ") (", returns, ") {")
+	g.P("func (i *Implementation) ", m.Name, "(", args, ") (", returns, ") {")
 	g.P("ctx, span := otel.Tracer(\"\").Start(ctx, \"", ifce.Name, "Implementation.", m.Name, "\")")
 	g.P("defer span.End()")
 	g.P()
 	g.P("var err error")
+	g.P()
 
 	// parse comment to make propper sqlx method
 	sqlxMethod := parseSQLXComment(m.Comment)
@@ -237,7 +238,7 @@ func (r *repoGenerator) genMethodTest(ifce *model.Interface, m *model.Method) {
 	g.P()
 	g.P("import (")
 	for pkg, alias := range r.imports {
-		g.P("\t", alias, "\"", pkg, "\"") // cannot use g.Import here
+		g.P("\t", strings.Replace(alias, "-", "", -1), "\"", pkg, "\"") // cannot use g.Import here
 	}
 	g.P(")")
 	g.P()

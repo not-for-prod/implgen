@@ -8,11 +8,12 @@ import (
 	otel "go.opentelemetry.io/otel"
 )
 
-func (i Implementation) Get(ctx context.Context, id model.OrderID) (model.Order, error) {
+func (i *Implementation) Get(ctx context.Context, id model.OrderID) (model.Order, error) {
 	ctx, span := otel.Tracer("").Start(ctx, "AbobaRepositoryImplementation.Get")
 	defer span.End()
 
 	var err error
+
 	var item []byte // TODO: fixit
 
 	err = i.ctxGetter.DefaultTrOrDB(ctx, i.db).GetContext(ctx, &item, sql.Get)

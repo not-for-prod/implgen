@@ -6,3 +6,4 @@ test_basic:
 
 test_repo:
 	go run main.go repo --src ./example/in/aboba.go --dst ./example/out/repo --interface-name AbobaRepository
+	
