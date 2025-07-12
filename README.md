@@ -1,78 +1,78 @@
-# Implgen
+# implgen
 
-Install:
+![Go](https://img.shields.io/badge/Go-1.24.3-blue)
+![License](https://img.shields.io/github/license/not-for-prod/implgen)
+
+`implgen` is a developer utility designed to **automatically generate boilerplate implementations** for Go interfaces.
+It helps kick-start the development of service layers, adapters, and stubs while saving time and reducing manual effort.
+
+---
+## Overview
+
+`implgen` provides some fetures:
+- 🛠 Generate empty implementations of interfaces
+- 📂 Supports single-file or per-method file output
+- 📦 Customizable output package and struct name
+- 🎯 Target a specific interface or process all in the source file
+- 🧭 Supports OpenTelemetry span instrumentation for methods with `context.Context`
+- 🐫 Automatic file/folder naming via `kebab-case` and `snake_case` converters
+
+---
+
+## 🚀 Installation
 
 ```bash
 go install github.com/not-for-prod/implgen@latest
 ```
 
-## Basic
+## Usage example
 
-> i wanted impementation generator that is working like generator inside IDE but cli
+```shell
+implgen --src=./service --dst=./serviceimpl --interface-name=Greeter
+```
 
-Flags:
+Flags (required):
 
-- `src` - source file filepath
-- `dst` - destination path
-- `interface-name` - specify which interface u need to implement
-- `with-otel` - if true and first method argument is from `context` package will generate
+- `src` - source file path
+- `dst` - destination dir path
 
-    ```go
-    ctx, span := otel.Tracer("").Start(ctx, "AbobaImplementation.Create")
-	defer span.End()
-    ```
+Flags (optional):
 
-### HOW I USE IT
+- `interface-name` - source `interface` name
+- `impl-package` - generated implementation `package` name, can be used only if `interface-name` set
+- `enable-trace` - enables writing `otel.Traсer(...).Start(...)` in methods,
+  where first argument type is `context.Context`
+- `enable-tests` - generate test suite for `Implementation struct`
 
-1. Specify interface
+Assume you have an [interface](./example/in/interface.go):
 
-    ```go
-    type Aboba interface {
-        Create(ctx context.Context, req CreateRequest) (model.OrderID, error)
-        Get(ctx context.Context, id model.OrderID) (model.Order, error)
-    }
-    ```
+```go
+type TestInterface interface {
+    A(ctx context.Context, req dto.GoRequest) error
+    B(ctx context.Context, req map[dto.GoRequest]dto.GoRequest) error
+    C(ctx context.Context, req []dto.GoRequest) error
+    D(ctx context.Context, req int, opts ...dto.GoRequest) error
+}
+```
 
-2. Run `implgen`
-    ```bash
-    implgen --src ./example/in/aboba.go --dst ./example/out/basic --interface-name Aboba --with-otel
-    ```
+Run:
 
-## Repo
+```shell
+implgen --src example/in/interface.go \
+		--dst example/out/ \
+		--interface-name TestInterface \
+		--impl-package test \
+		--enable-trace \
+		--enable-tests
+```
 
-> i wanted impementation generator for repo layer compatable with `[github.com/jmoiron/sqlx](https://github.com/jmoiron/sqlx)` and 
-> `[github.com/avito-tech/go-transaction-manager/sqlx](https://github.com/avito-tech/go-transaction-manager/sqlx)`
-> that will generate basic stuff aka `.sql` files method files with basic stuff i m tired to fill
+This will generate:
 
-Flags:
+- A struct with name `Test` with method stubs
+- Traced methods using OpenTelemetry if `context.Context` is the first method param
 
-- `src` - source file filepath
-- `dst` - destination path
-- `interface-name` - specify which interface u need to implement
+See [dst example](example/out) for more details
 
-### HOW I USE IT
+## Inspiration and References
 
-1. Specify interface with `// sqlx:GetContext` comments which refer [github.com/jmoiron/sqlx](https://github.com/jmoiron/sqlx) methods (`ExecContext`, `GetContext`, `SelectContext`, e.t.c.)
-
-    ```go
-    type AbobaRepository interface {
-        Create(ctx context.Context, req CreateRequest) (model.OrderID, error) // sqlx:GetContext
-        Get(ctx context.Context, id model.OrderID) (model.Order, error)       // sqlx:GetContext
-    }
-    ```
-
-2. Run `implgen repo`
-    ```bash
-    implgen repo --src ./example/in/aboba.go --dst ./example/out/repo --interface-name AbobaRepository
-    ```
-
-## How it was made
-
-As base i used [github.com/golang/mock/blob/main/mockgen](https://github.com/golang/mock/blob/main/mockgen) but as it was private i copied it and got it's guts out.
-Than did not enjoyed how generation was made so i took [google.golang.org/protobuf/compiler/protogen](https://google.golang.org/protobuf/compiler/protogen) generator.
-And after that had problems with imports so i used [golang.org/x/tools/imports](https://golang.org/x/tools/imports) and `go/format` on the top.
-More features like span generation and that's it.
-
-## TODO list:
-
-- i want `implgen repo` to work with actual models passed in method to generate repo layer models (with `db:""` tags) and simple queries
+- [gomock](https://github.com/golang/mock) - mock generation

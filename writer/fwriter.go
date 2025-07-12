@@ -1,4 +1,4 @@
-package fwriter
+package writer
 
 import (
 	"bytes"

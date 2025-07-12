@@ -18,12 +18,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/not-for-prod/implgen/pkg/mockgen/model"
+	"github.com/not-for-prod/implgen/mockgen/model"
 )
 
 var (
 	imports  = flag.String("imports", "", "(source mode) Comma-separated name=path pairs of explicit imports to use.")
-	auxFiles = flag.String("aux_files", "", "(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.")
+	auxFiles = flag.String(
+		"aux_files",
+		"",
+		"(source mode) Comma-separated pkg=path pairs of auxiliary Go source files.",
+	)
 )
 
 // SourceMode generates mocks via source file.
@@ -95,7 +99,7 @@ type importedPkg struct {
 func (i importedPkg) Path() string        { return i.path }
 func (i importedPkg) Parser() *fileParser { return i.parser }
 
-// duplicateImport is a bit of a misnomer. Currently the parser can't
+// duplicateImport is a bit of a misnomer. Currently the mockgen can't
 // handle cases of multi-file packages importing different packages
 // under the same name. Often these imports would not be problematic,
 // so this type lets us defer raising an error unless the package name
@@ -247,7 +251,10 @@ func (p *fileParser) parsePackage(path string) (*fileParser, error) {
 	}
 
 	for _, pkg := range pkgs {
-		file := ast.MergePackageFiles(pkg, ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
+		file := ast.MergePackageFiles(
+			pkg,
+			ast.FilterFuncDuplicates|ast.FilterUnassociatedComments|ast.FilterImportDuplicates,
+		)
 		for ni := range iterInterfaces(file) {
 			newP.importedInterfaces.Set(path, ni.name.Name, ni)
 		}
