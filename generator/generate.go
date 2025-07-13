@@ -185,7 +185,7 @@ func (gc *GenerateCommand) getArgTypes(m *model.Method, pkgOverride string) []st
 func (gc *GenerateCommand) generateHeader(g *protogen.GeneratedFile, ifce *model.Interface) {
 	g.P(
 		"package ",
-		lo.Ternary(gc.implementationPackageName == "", strtools.SnakeCase(ifce.Name), gc.implementationName),
+		strtools.SnakeCase(lo.Ternary(gc.implementationPackageName == "", ifce.Name, gc.implementationPackageName)),
 	)
 	g.P()
 	g.P("import (")
