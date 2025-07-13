@@ -283,7 +283,7 @@ func (gc *GenerateCommand) generateMethod(ifce *model.Interface, m *model.Method
 		),
 	)
 
-	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") {
+	if len(argTypes) > 0 && strings.HasPrefix(argTypes[0], "context.") && gc.enableTrace {
 		g.P(
 			argNames[0], ", span := otel.Tracer(\"\").Start(", argNames[0], ", \"", ifce.Name, "Implementation.",
 			m.Name, "\")",
