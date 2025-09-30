@@ -1,6 +1,6 @@
 # implgen
 
-![Go](https://img.shields.io/badge/Go-1.24.3-blue)
+![Go](https://img.shields.io/badge/Go-1.25.1-blue)
 ![License](https://img.shields.io/github/license/not-for-prod/implgen)
 
 `implgen` is a developer utility designed to **automatically generate boilerplate implementations** for Go interfaces. 
