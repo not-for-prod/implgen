@@ -1,6 +1,6 @@
 # implgen
 
-![Go](https://img.shields.io/badge/Go-1.25.1-blue)
+![Go](https://img.shields.io/badge/Go-1.24.3-blue)
 ![License](https://img.shields.io/github/license/not-for-prod/implgen)
 
 `implgen` is a developer utility designed to **automatically generate boilerplate implementations** for Go interfaces. 
@@ -14,7 +14,6 @@ It helps kick-start the development of service layers, adapters, and stubs while
 - 📂 Supports single-file or per-method file output
 - 📦 Customizable output package and struct name
 - 🎯 Target a specific interface or process all in the source file
-- 🧭 Supports OpenTelemetry span instrumentation for methods with `context.Context`
 - 🐫 Automatic file/folder naming via `kebab-case` and `snake_case` converters
 
 ---
@@ -42,10 +41,6 @@ Flags (optional):
 - `impl-name` - generated implementation `struct` name
 - `impl-package` - generated implementation `package` name, can be used only if `interface-name` set
 - `enable-trace` - enables writing `otel.Traсer(...).Start(...)` in methods, 
-where first argument type is `context.Context` 
-- `tracer-name` - name used in `otel.Traсer(<tracer-name>)`
-- `single-file` - indicates whether methods will be generated into single file or
-file per method
 
 Assume you have an [interface](./example/in/interface.go):
 
@@ -65,14 +60,11 @@ implgen --src example/in/interface.go \
 		--dst example/out/ \
 		--interface-name TestInterface \
 		--impl-name Test \
-		--impl-package test \
-		--enable-trace \
-		--tracer-name my-brilliant-tracer
+		--impl-package test
 ```
 
 This will generate:
 
 - A struct with name `Test` with method stubs
-- Traced methods using OpenTelemetry if `context.Context` is the first method param
 
 See [dst example](example/out) for more details

@@ -30,12 +30,6 @@ type GenerateCommand struct {
 	// singleFile determines whether all methods should be generated into a single file.
 	// If false, each method will be written into its own file.
 	singleFile bool
-
-	// enableTrace determines whether otel.Tracer(tracerName).Start(...) will be used inside method.
-	enableTrace bool
-
-	// tracerName is the name used in otel.Tracer(tracerName).Start(...) for tracing spans.
-	tracerName string
 }
 
 // NewGenerateCommand creates a new GenerateCommand with the given parameters.
@@ -45,8 +39,6 @@ func NewGenerateCommand(
 	interfaceName string,
 	implementationName string,
 	implementationPackageName string,
-	enableTrace bool,
-	tracerName string,
 	singleFile bool,
 ) *GenerateCommand {
 	return &GenerateCommand{
@@ -54,8 +46,6 @@ func NewGenerateCommand(
 		interfaceName:             interfaceName,
 		implementationName:        implementationName,
 		implementationPackageName: implementationPackageName,
-		enableTrace:               enableTrace,
-		tracerName:                tracerName,
 		singleFile:                singleFile,
 	}
 }
@@ -69,13 +59,21 @@ func (cmd *GenerateCommand) packageName(ifce model.Interface) string {
 		packageName = cmd.implementationPackageName
 	}
 
-	return stringCase.GoPackageCase(packageName)
+	return stringCase.SnakeCase(packageName)
+}
+
+// folderName determines the Go package folder name for the generated code
+// based on the interface name and optional overrides provided in the generator.
+func (cmd *GenerateCommand) folderName(ifce model.Interface) string {
+	pkgName := cmd.packageName(ifce)
+
+	return strings.Replace(pkgName, "_", "-", -1)
 }
 
 // dstPath builds the output directory path for a given interface's implementation,
 // using the base destination directory and the generated package name.
 func (cmd *GenerateCommand) dstPath(ifce model.Interface) string {
-	return filepath.Join(cmd.dst, cmd.packageName(ifce))
+	return filepath.Join(cmd.dst, cmd.folderName(ifce))
 }
 
 // Execute creates basic implementations for all interfaces in the provided package.
@@ -109,7 +107,7 @@ func (cmd *GenerateCommand) generateInterface(pkg model.Package, ifce model.Inte
 	g.P("type ", cmd.implementationName, " struct {")
 	g.P("}")
 	g.P()
-	g.P("func NewImplementation() *", cmd.implementationName, " {")
+	g.P("func New", cmd.implementationName, "() *", cmd.implementationName, " {")
 	g.P("return &", cmd.implementationName, "{}")
 	g.P("}")
 
@@ -157,7 +155,6 @@ func generateImports(g *protogen.GeneratedFile, pkg model.Package) {
 	for _, _import := range pkg.Imports {
 		g.P(_import.Alias, " \"", _import.Path, "\"")
 	}
-	g.P("\"go.opentelemetry.io/otel\"")
 	g.P(")")
 }
 
@@ -196,15 +193,6 @@ func (cmd *GenerateCommand) generateMethod(g *protogen.GeneratedFile, method mod
 	results := generateResults(method.Out)
 
 	g.P("func (i *", cmd.implementationName, ")", method.Name, " ", params, " ", results, "{")
-	if len(method.In) > 0 && method.In[0].Type == "context.Context" && cmd.enableTrace {
-		// wrap method with OpenTelemetry span
-		g.P(
-			method.In[0].Name, ", span := otel.Tracer(\""+cmd.tracerName+"\").Start(", method.In[0].Name, ", \"",
-			cmd.implementationName, ".", method.Name, "\")",
-		)
-		g.P("defer span.End()")
-		g.P()
-	}
 	g.P("panic(\"implement me\")")
 	g.P("}")
 	g.P()

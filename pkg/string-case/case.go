@@ -38,7 +38,3 @@ func KebabCase(str string) string {
 
 	return string(result)
 }
-
-func GoPackageCase(str string) string {
-	return strings.ToLower(str)
-}

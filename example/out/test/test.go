@@ -7,6 +7,6 @@ import (
 type Test struct {
 }
 
-func NewImplementation() *Test {
+func NewTest() *Test {
 	return &Test{}
 }

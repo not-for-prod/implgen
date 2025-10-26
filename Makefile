@@ -4,6 +4,4 @@ test:
 		--dst example/out/ \
 		--interface-name TestInterface \
 		--impl-name Test \
-		--impl-package test \
-		--enable-trace \
-		--tracer-name "my-brilliant-tracer"
+		--impl-package test
