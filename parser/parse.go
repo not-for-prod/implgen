@@ -71,7 +71,7 @@ func (cmd *ParseCommand) Execute() (model.Package, error) {
 	// add self import
 	selfImport := model.Import{
 		Alias: astFile.Name.Name, // package name as alias
-		Path:  packageImportPath(cmd.src),
+		Path:  packageImportPath(),
 	}
 	cmd.imports = append(cmd.imports, selfImport)
 
@@ -218,18 +218,24 @@ func (cmd *ParseCommand) exprString(expr ast.Expr) string {
 	}
 }
 
-func packageImportPath(src string) string {
-	dir := filepath.Dir(src)
+func packageImportPath() string {
+	// Get path where implgen is executed
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 
-	modRoot, _ := findGoModRoot(dir)
+	modRoot, _ := findGoModRoot(pwd)
 	if modRoot != "" {
+		// go.mod module name
 		modName, _ := moduleName(modRoot)
+		dir, _ := filepath.Rel(modRoot, pwd)
 
 		return modName + "/" + dir
 	}
 
 	// Option B: fallback to directory name
-	return filepath.Base(dir)
+	return filepath.Base(pwd)
 }
 
 func moduleName(modRoot string) (string, error) {
@@ -249,6 +255,7 @@ func moduleName(modRoot string) (string, error) {
 	return "", nil
 }
 
+// findGoModRoot get go mod absolute path
 func findGoModRoot(dir string) (string, error) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {

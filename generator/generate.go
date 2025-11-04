@@ -187,7 +187,6 @@ func (cmd *GenerateCommand) generateMethodFile(
 }
 
 // generateMethod writes the method implementation stub to the provided generated file.
-// If the method accepts context.Context as the first argument, OpenTelemetry instrumentation is added.
 func (cmd *GenerateCommand) generateMethod(g *protogen.GeneratedFile, method model.Method) {
 	params := generateParams(method.In)
 	results := generateResults(method.Out)
@@ -204,7 +203,12 @@ func generateParams(params []model.Parameter) string {
 	b.WriteString("(")
 
 	for i, param := range params {
-		b.WriteString(param.Name)
+		if param.Type == "context.Context" {
+			b.WriteString("ctx")
+		} else {
+			b.WriteString(param.Name)
+		}
+
 		b.WriteString(" ")
 		b.WriteString(param.Type)
 		if i != len(params)-1 {

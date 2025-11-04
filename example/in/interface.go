@@ -7,6 +7,9 @@ import (
 	"github.com/not-for-prod/implgen/example/in/dto"
 )
 
+//go:generate implgen --src interface.go --interface-name TestInterface --dst ../test
+//go:generate pwd
+
 type ERequest struct{}
 
 type EResponse struct{}
