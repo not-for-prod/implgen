@@ -25,7 +25,6 @@ const (
 const (
 	// Default values for optional flags
 	defaultImplementationName = "Implementation"
-	defaultTracerName         = ""
 )
 
 // main defines and executes the CLI command using cobra.
@@ -50,7 +49,7 @@ Example:
 			// Run code generation using provided options
 			files, err := generateCommand.Execute(_package)
 			exitOnErr("failed to generate implementation", err)
-
+			
 			// Write generated files to disk
 			err = writeCommand.Execute(files)
 			exitOnErr("failed to write basic interfaces implementation", err)

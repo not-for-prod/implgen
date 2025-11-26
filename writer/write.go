@@ -27,12 +27,12 @@ func NewCommand(verbose bool) *Command {
 }
 
 func (w *Command) overwrite(path string) bool {
-	if !w.verbose {
-		return false
-	}
-
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return true
+	}
+
+	if !w.verbose {
+		return false
 	}
 
 	keep := "don't overwrite " + path
@@ -113,8 +113,9 @@ func (w *Command) writeGoBytesToFile(path string, data []byte) error {
 func (w *Command) Execute(files []model.File) error {
 	for _, file := range files {
 		err := w.writeGoBytesToFile(file.Path, file.Data)
-		
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
