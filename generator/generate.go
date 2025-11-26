@@ -10,9 +10,9 @@ import (
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
-// GenerateCommand holds configuration for generating a Go implementation
+// Command holds configuration for generating a Go implementation
 // of an interface, including destination, naming, and output structure.
-type GenerateCommand struct {
+type Command struct {
 	// dst is the base directory where generated files will be written.
 	dst string
 
@@ -32,16 +32,16 @@ type GenerateCommand struct {
 	singleFile bool
 }
 
-// NewGenerateCommand creates a new GenerateCommand with the given parameters.
+// NewCommand creates a new Command with the given parameters.
 // This struct is typically passed into a code generator to drive its behavior.
-func NewGenerateCommand(
+func NewCommand(
 	dst string,
 	interfaceName string,
 	implementationName string,
 	implementationPackageName string,
 	singleFile bool,
-) *GenerateCommand {
-	return &GenerateCommand{
+) *Command {
+	return &Command{
 		dst:                       dst,
 		interfaceName:             interfaceName,
 		implementationName:        implementationName,
@@ -52,7 +52,7 @@ func NewGenerateCommand(
 
 // packageName determines the Go package name for the generated code
 // based on the interface name and optional overrides provided in the generator.
-func (cmd *GenerateCommand) packageName(ifce model.Interface) string {
+func (cmd *Command) packageName(ifce model.Interface) string {
 	packageName := ifce.Name
 
 	if cmd.interfaceName != "" && cmd.implementationPackageName != "" {
@@ -64,7 +64,7 @@ func (cmd *GenerateCommand) packageName(ifce model.Interface) string {
 
 // folderName determines the Go package folder name for the generated code
 // based on the interface name and optional overrides provided in the generator.
-func (cmd *GenerateCommand) folderName(ifce model.Interface) string {
+func (cmd *Command) folderName(ifce model.Interface) string {
 	pkgName := cmd.packageName(ifce)
 
 	return strings.Replace(pkgName, "_", "-", -1)
@@ -72,13 +72,13 @@ func (cmd *GenerateCommand) folderName(ifce model.Interface) string {
 
 // dstPath builds the output directory path for a given interface's implementation,
 // using the base destination directory and the generated package name.
-func (cmd *GenerateCommand) dstPath(ifce model.Interface) string {
+func (cmd *Command) dstPath(ifce model.Interface) string {
 	return filepath.Join(cmd.dst, cmd.folderName(ifce))
 }
 
 // Execute creates basic implementations for all interfaces in the provided package.
 // If a specific interface name is configured, only that one is processed.
-func (cmd *GenerateCommand) Execute(pkg model.Package) ([]model.File, error) {
+func (cmd *Command) Execute(pkg model.Package) ([]model.File, error) {
 	files := make([]model.File, 0)
 
 	for _, _interface := range pkg.Interfaces {
@@ -97,7 +97,7 @@ func (cmd *GenerateCommand) Execute(pkg model.Package) ([]model.File, error) {
 // generateInterface generates a full implementation of the given interface,
 // including its struct declaration, constructor, and method stubs.
 // Methods are split into files if configured via i.singleFile.
-func (cmd *GenerateCommand) generateInterface(pkg model.Package, ifce model.Interface) ([]model.File, error) {
+func (cmd *Command) generateInterface(pkg model.Package, ifce model.Interface) ([]model.File, error) {
 	p := protogen.Plugin{}
 	g := p.NewGeneratedFile("", "")
 	files := make([]model.File, 0)
@@ -141,7 +141,7 @@ func (cmd *GenerateCommand) generateInterface(pkg model.Package, ifce model.Inte
 }
 
 // generateHeader writes the file header including package declaration and imports.
-func (cmd *GenerateCommand) generateHeader(g *protogen.GeneratedFile, pkg model.Package, ifce model.Interface) {
+func (cmd *Command) generateHeader(g *protogen.GeneratedFile, pkg model.Package, ifce model.Interface) {
 	g.P("package ", cmd.packageName(ifce))
 	g.P()
 	generateImports(g, pkg)
@@ -159,7 +159,7 @@ func generateImports(g *protogen.GeneratedFile, pkg model.Package) {
 }
 
 // generateMethodFile generates a standalone Go file containing a single method implementation stub.
-func (cmd *GenerateCommand) generateMethodFile(
+func (cmd *Command) generateMethodFile(
 	pkg model.Package,
 	ifce model.Interface,
 	method model.Method,
@@ -187,7 +187,7 @@ func (cmd *GenerateCommand) generateMethodFile(
 }
 
 // generateMethod writes the method implementation stub to the provided generated file.
-func (cmd *GenerateCommand) generateMethod(g *protogen.GeneratedFile, method model.Method) {
+func (cmd *Command) generateMethod(g *protogen.GeneratedFile, method model.Method) {
 	params := generateParams(method.In)
 	results := generateResults(method.Out)
 

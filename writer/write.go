@@ -9,15 +9,28 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/not-for-prod/implgen/model"
 	"github.com/not-for-prod/implgen/pkg/clog"
 
 	importsTool "golang.org/x/tools/imports"
 )
 
-func overwrite(path string) bool {
+type Command struct {
+	// Enable verbose logging
+	verbose bool
+}
+
+func NewCommand(verbose bool) *Command {
+	return &Command{verbose: verbose}
+}
+
+func (w *Command) overwrite(path string) bool {
+	if !w.verbose {
+		return false
+	}
+
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return true
 	}
@@ -43,8 +56,8 @@ func overwrite(path string) bool {
 }
 
 // WriteToFile writes r to the file with path
-func WriteToFile(path string, r io.Reader) error {
-	if !overwrite(path) {
+func (w *Command) writeToFile(path string, r io.Reader) error {
+	if !w.overwrite(path) {
 		return nil
 	}
 
@@ -65,34 +78,42 @@ func WriteToFile(path string, r io.Reader) error {
 	return err
 }
 
-func WriteStringToFile(path string, s string) error {
-	return WriteToFile(path, strings.NewReader(s))
+func (w *Command) writeBytesToFile(path string, data []byte) error {
+	return w.writeToFile(path, bytes.NewReader(data))
 }
 
-func WriteBytesToFile(path string, data []byte) error {
-	return WriteToFile(path, bytes.NewReader(data))
-}
-
-// WriteGoBytesToFile WriteBytesToFile (that are actually go code)  but before makes `goimports -w ...` && `go fmt ...`
-func WriteGoBytesToFile(path string, data []byte) error {
+// writeGoBytesToFile WriteBytesToFile (that are actually go code)  but before makes `goimports -w ...` && `go fmt ...`
+func (w *Command) writeGoBytesToFile(path string, data []byte) error {
 	var err error
 
 	// goimports -w ...
-	data, err = importsTool.Process(path, data, &importsTool.Options{
-		Comments: true,
-	})
+	data, err = importsTool.Process(
+		path, data, &importsTool.Options{
+			Comments: true,
+		},
+	)
 	if err != nil {
 		clog.Fatalf(err.Error())
 	}
 
-	//// go fmt ...
+	// go fmt ...
 	data, err = format.Source(data)
 	if err != nil {
 		clog.Fatalf(err.Error())
 	}
 
-	err = WriteBytesToFile(path, data)
+	err = w.writeBytesToFile(path, data)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *Command) Execute(files []model.File) error {
+	for _, file := range files {
+		err := w.writeGoBytesToFile(file.Path, file.Data)
+		
 		return err
 	}
 

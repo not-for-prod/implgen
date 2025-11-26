@@ -14,20 +14,20 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-type ParseCommand struct {
+type Command struct {
 	src        string
 	info       *types.Info
 	selfImport model.Import
 	imports    []model.Import
 }
 
-func New(src string) *ParseCommand {
-	return &ParseCommand{
+func NewCommand(src string) *Command {
+	return &Command{
 		src: src,
 	}
 }
 
-func (cmd *ParseCommand) Execute() (model.Package, error) {
+func (cmd *Command) Execute() (model.Package, error) {
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedSyntax |
@@ -85,7 +85,7 @@ func (cmd *ParseCommand) Execute() (model.Package, error) {
 	}, nil
 }
 
-func (cmd *ParseCommand) parseImports(node *ast.File) []model.Import {
+func (cmd *Command) parseImports(node *ast.File) []model.Import {
 	var imports []model.Import
 
 	for _, imp := range node.Imports {
@@ -108,7 +108,7 @@ func (cmd *ParseCommand) parseImports(node *ast.File) []model.Import {
 	return imports
 }
 
-func (cmd *ParseCommand) parseInterfaces(node *ast.File) []model.Interface {
+func (cmd *Command) parseInterfaces(node *ast.File) []model.Interface {
 	var interfaces []model.Interface
 
 	for _, decl := range node.Decls {
@@ -126,7 +126,7 @@ func (cmd *ParseCommand) parseInterfaces(node *ast.File) []model.Interface {
 	return interfaces
 }
 
-func (cmd *ParseCommand) parseInterface(name string, iface *ast.InterfaceType) model.Interface {
+func (cmd *Command) parseInterface(name string, iface *ast.InterfaceType) model.Interface {
 	var methods []model.Method
 
 	for _, field := range iface.Methods.List {
@@ -147,7 +147,7 @@ func (cmd *ParseCommand) parseInterface(name string, iface *ast.InterfaceType) m
 	}
 }
 
-func (cmd *ParseCommand) parseMethod(name string, ftype *ast.FuncType) model.Method {
+func (cmd *Command) parseMethod(name string, ftype *ast.FuncType) model.Method {
 	method := model.Method{Name: name}
 
 	if ftype.Params != nil {
@@ -179,7 +179,7 @@ func (cmd *ParseCommand) parseMethod(name string, ftype *ast.FuncType) model.Met
 	return method
 }
 
-func (cmd *ParseCommand) exprString(expr ast.Expr) string {
+func (cmd *Command) exprString(expr ast.Expr) string {
 	switch e := expr.(type) {
 	case *ast.Ident:
 		// look up type info

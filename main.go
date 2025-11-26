@@ -19,6 +19,7 @@ const (
 	implementationNameFlag        = "impl-name"
 	implementationPackageNameFlag = "impl-package"
 	singleFileFlag                = "single-file"
+	verboseFlag                   = "verbose"
 )
 
 const (
@@ -41,6 +42,7 @@ Example:
 			flags := cmd.Flags()
 			parseCommand := flagsToParseCommand(flags)
 			generateCommand := flagsToGenerateCommand(flags)
+			writeCommand := flagsToWriteCommand(flags)
 
 			_package, err := parseCommand.Execute()
 			exitOnErr("failed to parse source file", err)
@@ -50,10 +52,8 @@ Example:
 			exitOnErr("failed to generate implementation", err)
 
 			// Write generated files to disk
-			for _, file := range files {
-				err := writer.WriteGoBytesToFile(file.Path, file.Data)
-				exitOnErr("failed to write basic interfaces implementation", err)
-			}
+			err = writeCommand.Execute(files)
+			exitOnErr("failed to write basic interfaces implementation", err)
 		},
 	}
 
@@ -86,10 +86,11 @@ func registerFlags(cmd *cobra.Command) {
 		implementationPackageNameFlag, "",
 		"generated implementation package name, can be used only when interface name is set",
 	)
+	cmd.Flags().Bool(verboseFlag, false, "enable verbose logging")
 }
 
-// flagsToParseCommand - parse cobra.Command flags into parser.ParseCommand
-func flagsToParseCommand(flags *pflag.FlagSet) *parser.ParseCommand {
+// flagsToParseCommand - parse cobra.Command flags into parser.Command
+func flagsToParseCommand(flags *pflag.FlagSet) *parser.Command {
 	// Parse required --src flag
 	src, err := flags.GetString(srcFlat)
 	if err != nil {
@@ -97,11 +98,11 @@ func flagsToParseCommand(flags *pflag.FlagSet) *parser.ParseCommand {
 		os.Exit(1)
 	}
 
-	return parser.New(src)
+	return parser.NewCommand(src)
 }
 
-// flagsToGenerateCommand - parse cobra.Command flags into generator.GenerateCommand
-func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.GenerateCommand {
+// flagsToGenerateCommand - parse cobra.Command flags into generator.Command
+func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.Command {
 	// Parse required --dst flag
 	dst, err := flags.GetString(dstFlat)
 	if err != nil {
@@ -125,11 +126,17 @@ func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.GenerateCommand {
 		os.Exit(1)
 	}
 
-	return generator.NewGenerateCommand(
+	return generator.NewCommand(
 		dst,
 		interfaceName,             // src interface name
 		implementationName,        // dst struct name
 		implementationPackageName, // dst package name
 		singleFile,
 	)
+}
+
+func flagsToWriteCommand(flags *pflag.FlagSet) *writer.Command {
+	verbose, _ := flags.GetBool(verboseFlag)
+
+	return writer.NewCommand(verbose)
 }
