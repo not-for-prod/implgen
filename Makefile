@@ -5,3 +5,6 @@ test:
 		--interface-name TestInterface \
 		--impl-name Test \
 		--impl-package test
+
+build:
+	go build -o bin/implgen main.go

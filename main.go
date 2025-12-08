@@ -2,6 +2,9 @@ package main
 
 import (
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/not-for-prod/implgen/generator"
 	"github.com/not-for-prod/implgen/parser"
@@ -15,6 +18,7 @@ const (
 	// Flag names used in the CLI
 	srcFlat                       = "src"
 	dstFlat                       = "dst"
+	modRelativeFlag               = "mod-relative"
 	interfaceNameFlag             = "interface-name"
 	implementationNameFlag        = "impl-name"
 	implementationPackageNameFlag = "impl-package"
@@ -49,7 +53,7 @@ Example:
 			// Run code generation using provided options
 			files, err := generateCommand.Execute(_package)
 			exitOnErr("failed to generate implementation", err)
-			
+
 			// Write generated files to disk
 			err = writeCommand.Execute(files)
 			exitOnErr("failed to write basic interfaces implementation", err)
@@ -71,6 +75,16 @@ func exitOnErr(msg string, err error) {
 	}
 }
 
+// getGoModRoot returns the absolute path to the root directory containing go.mod.
+func getGoModRoot() (string, error) {
+	output, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}").Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
+}
+
 // registerFlags - registers flags
 func registerFlags(cmd *cobra.Command) {
 	cmd.Flags().String(srcFlat, "", "source file")
@@ -80,6 +94,7 @@ func registerFlags(cmd *cobra.Command) {
 
 	cmd.Flags().String(interfaceNameFlag, "", "source interface name")
 	cmd.Flags().Bool(singleFileFlag, false, "generate interface methods into single file")
+	cmd.Flags().Bool(modRelativeFlag, false, "destination file path is relative to go.mod")
 	cmd.Flags().String(implementationNameFlag, defaultImplementationName, "generated implementation struct name")
 	cmd.Flags().String(
 		implementationPackageNameFlag, "",
@@ -118,11 +133,22 @@ func flagsToGenerateCommand(flags *pflag.FlagSet) *generator.Command {
 	singleFile, _ := flags.GetBool(singleFileFlag)
 	implementationName, _ := flags.GetString(implementationNameFlag)
 	implementationPackageName, _ := flags.GetString(implementationPackageNameFlag)
+	modRelative, _ := flags.GetBool(modRelativeFlag)
 
 	// Validate: impl package name requires interface name
 	if implementationPackageName != "" && interfaceName == "" {
 		clog.Errorf("flag %q requires %q to be set", implementationPackageNameFlag, interfaceNameFlag)
 		os.Exit(1)
+	}
+
+	if modRelative {
+		root, err := getGoModRoot()
+		if err != nil {
+			clog.Errorf("failed to get go.mod: %v", err)
+			os.Exit(1)
+		}
+
+		dst = filepath.Join(root, dst)
 	}
 
 	return generator.NewCommand(
