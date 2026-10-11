@@ -1,12 +1,10 @@
 package parser
 
 import (
-	"bufio"
 	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -28,18 +26,18 @@ func NewCommand(src string) *Command {
 }
 
 func (cmd *Command) Execute() (model.Package, error) {
+	abs, err := filepath.Abs(cmd.src)
+	if err != nil {
+		return model.Package{}, err
+	}
+
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedSyntax |
 			packages.NeedTypes |
 			packages.NeedTypesInfo |
 			packages.NeedImports,
-		Dir: filepath.Dir(cmd.src), // important: evaluate from your file’s directory
-	}
-
-	abs, err := filepath.Abs(cmd.src)
-	if err != nil {
-		return model.Package{}, err
+		Dir: filepath.Dir(abs),
 	}
 
 	pkgs, err := packages.Load(cfg, fmt.Sprintf("file=%s", abs))
@@ -69,11 +67,11 @@ func (cmd *Command) Execute() (model.Package, error) {
 	}
 
 	// add self import
-	selfImport := model.Import{
-		Alias: astFile.Name.Name, // package name as alias
-		Path:  packageImportPath(),
+	cmd.selfImport = model.Import{
+		Alias: pkg.Name,
+		Path:  pkg.PkgPath,
 	}
-	cmd.imports = append(cmd.imports, selfImport)
+	cmd.imports = []model.Import{cmd.selfImport}
 
 	cmd.info = pkg.TypesInfo
 	cmd.imports = append(cmd.imports, cmd.parseImports(astFile)...)
@@ -191,7 +189,7 @@ func (cmd *Command) exprString(expr ast.Expr) string {
 					// builtin like int, string, error
 					return e.Name
 				}
-				if pkg.Name() == cmd.selfImport.Alias {
+				if pkg.Path() == cmd.selfImport.Path {
 					// local type
 					return cmd.selfImport.Alias + "." + e.Name
 				}
@@ -216,64 +214,4 @@ func (cmd *Command) exprString(expr ast.Expr) string {
 	default:
 		return "unknown"
 	}
-}
-
-func packageImportPath() string {
-	// Get path where implgen is executed
-	pwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	modRoot, _ := findGoModRoot(pwd)
-	if modRoot != "" {
-		// go.mod module name
-		modName, _ := moduleName(modRoot)
-		dir, _ := filepath.Rel(modRoot, pwd)
-
-		return modName + "/" + dir
-	}
-
-	// Option B: fallback to directory name
-	return filepath.Base(pwd)
-}
-
-func moduleName(modRoot string) (string, error) {
-	f, err := os.Open(filepath.Join(modRoot, "go.mod"))
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "module ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
-		}
-	}
-	return "", nil
-}
-
-// findGoModRoot get go mod absolute path
-func findGoModRoot(dir string) (string, error) {
-	absDir, err := filepath.Abs(dir)
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		modPath := filepath.Join(absDir, "go.mod")
-		if _, err := os.Stat(modPath); err == nil {
-			return absDir, nil
-		}
-
-		parent := filepath.Dir(absDir)
-		if parent == absDir { // reached filesystem root
-			break
-		}
-		absDir = parent
-	}
-
-	return "", nil
 }
